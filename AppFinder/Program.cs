@@ -9,3 +9,5 @@ var seachFilter = new SearchFilter()
     OperationType = OperationType.Sell
 };
 var properties = await broser.FetchAllProperties(seachFilter);
+
+//await broser.GoToHome();

@@ -1,4 +1,5 @@
 ﻿using Microsoft.Playwright;
+using System.Text.RegularExpressions;
 
 namespace AppFinder.Driver
 {
@@ -22,16 +23,15 @@ namespace AppFinder.Driver
         #region Initialize
         private static async Task<IBrowserContext> Initialize()
         {
-            const string userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36";
+            const string userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36 OPR/107.0.0.0";
 
             var browserOptions = new BrowserTypeLaunchOptions()
             {
-                Headless = false
+                Headless = true
             };
 
             var broserNewContext = new BrowserNewContextOptions()
             {
-                BypassCSP = false,
                 UserAgent = userAgent
             };
 
@@ -44,7 +44,9 @@ namespace AppFinder.Driver
         public async Task GoToHome()
         {
             var page = await Browser.NewPageAsync();
-            await page.GotoAsync("https://www.vivareal.com.br");
+            var response = await page.GotoAsync($"https://www.vivareal.com.br/venda/sp/sorocaba/?pagina=2");
+            var headers = response.Request.Headers;
+            await page.ScreenshotAsync(new() { Path = "screenshot.png" });
         }
 
         public async Task<IEnumerable<PropertyInfo>> FetchAllProperties(SearchFilter filter)
@@ -61,7 +63,7 @@ namespace AppFinder.Driver
 
             for (var pageNumber = 1; pageNumber <= pagesToFetch; pageNumber++)
             {
-                 if (pageNumber != 1) await GoToPage(pageNumber, page, filter);
+                if (pageNumber != 1) await GoToPage(pageNumber, page, filter);
                 var propertiesPageResult = await FetchPropertiesOnPage(page);
                 properties.AddRange(propertiesPageResult);
             }
@@ -73,6 +75,7 @@ namespace AppFinder.Driver
         {
             var url = $"https://www.vivareal.com.br/{filter.OperationType.GetDescription()}/{filter.State}/{filter.City}?pagina={pageNumber}";
             await page.GotoAsync($"https://www.vivareal.com.br/{filter.OperationType.GetDescription()}/{filter.State}/{filter.City}?pagina={pageNumber}");
+            await page.ScreenshotAsync(new() { Path = "screenshot.png" });
         }
 
         private static async Task<IList<PropertyInfo>> FetchPropertiesOnPage(IPage page)
@@ -96,15 +99,16 @@ namespace AppFinder.Driver
             property.Bathrooms = await GetBathrooms(locator);
             property.Bedrooms = await GetBedrooms(locator);
             property.Garage = await GetGarage(locator);
-            //property.Price = await GetPrice(locator);
+            property.Price = await GetPrice(locator);
             return property;
         }
 
         private static async Task<string> GetPrice(ILocator locator)
         {
-            var cardSection = locator.Locator(".property-card__values").First;
-            var bedroomSection = cardSection.Locator("p").First;
-            return await bedroomSection.TextContentAsync();
+            var valueCardSection = locator.Locator(".property-card__values").First;
+            var priceSection = valueCardSection.Locator(".property-card__price").First;
+            var text = await priceSection.TextContentAsync();
+            return text.Replace("Preço abaixo do mercado", "").Replace("A partir de", "");
         }
 
         private static async Task<string> GetGarage(ILocator locator)
