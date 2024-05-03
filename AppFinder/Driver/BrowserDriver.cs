@@ -1,5 +1,4 @@
 ﻿using Microsoft.Playwright;
-using System.Text.RegularExpressions;
 
 namespace AppFinder.Driver
 {
@@ -100,7 +99,15 @@ namespace AppFinder.Driver
             property.Bedrooms = await GetBedrooms(locator);
             property.Garage = await GetGarage(locator);
             property.Price = await GetPrice(locator);
+            property.Address = await GetAddress(locator);
             return property;
+        }
+
+        private static async Task<string> GetAddress(ILocator locator)
+        {
+            var addressSection = locator.Locator(".property-card__address").First;
+            var text = await addressSection.TextContentAsync();
+            return text.Trim();
         }
 
         private static async Task<string> GetPrice(ILocator locator)
@@ -108,14 +115,15 @@ namespace AppFinder.Driver
             var valueCardSection = locator.Locator(".property-card__values").First;
             var priceSection = valueCardSection.Locator(".property-card__price").First;
             var text = await priceSection.TextContentAsync();
-            return text.Replace("Preço abaixo do mercado", "").Replace("A partir de", "");
+            return text.Replace("Preço abaixo do mercado", "").Replace("A partir de", "").Trim();
         }
 
         private static async Task<string> GetGarage(ILocator locator)
         {
             var cardSection = locator.Locator("li.property-card__detail-garage").First;
             var garageSection = cardSection.Locator("span.js-property-card-value").First;
-            return await garageSection.TextContentAsync();
+            var text = await garageSection.TextContentAsync();
+            return text.Trim();
         }
 
         private static async Task<string> GetBedrooms(ILocator locator)
@@ -129,14 +137,17 @@ namespace AppFinder.Driver
         {
             var cardSection = locator.Locator("li.property-card__detail-bathroom").First;
             var bathroomSection = cardSection.Locator("span.js-property-card-value").First;
-            return await bathroomSection.TextContentAsync();
+            var text = await bathroomSection.TextContentAsync();
+            return text.Trim();
         }
 
         private static async Task<string> GetDimension(ILocator locator)
         {
             var dimentionSection = locator.Locator("span.js-property-card-detail-area").First;
-            return await dimentionSection.TextContentAsync();
+            var text = await dimentionSection.TextContentAsync();
+            return text.Trim();
         }
+
         private static async Task<string> GetLink(ILocator locator)
         {
             var baseUrl = "https://www.vivareal.com.br";

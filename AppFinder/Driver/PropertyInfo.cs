@@ -8,5 +8,6 @@
         public string Bedrooms { get; set; }
         public string Garage { get; set; }
         public string Price { get; set; }
+        public string Address { get; set; }
     }
 }
