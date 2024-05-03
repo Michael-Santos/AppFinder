@@ -12,13 +12,19 @@ Minha ideia principal é criar um frontend em que serão plotados os imóveis em
 ### ROADMAP
 - [x] Carregar informações básicas de imóveis
 - [x] Carregar endereço do imóvel
-- [ ] Encontrar coordenada no imóvel (Geocode)
 - [ ] Plotar informações no frontend
+- [ ] Encontrar coordenada no imóvel (Geocode)
 - [ ] Fazer pesquisa pelo próprio frontend
 
 
 ### GeoCode
-Estou pensando em utilizar o seguinte serviço para o geocode: [Geocoding](https://geocode.maps.co)
+Estou pensando em utilizar um dos seguintes serviços para o geocode:
+ - [Geocoding](https://geocode.maps.co)
+ - [MapBox Temporaty Goecoding](https://www.mapbox.com/pricing#temporary-geocoding-api)
 
 Entretanto, acredito em um primeiro momento que seja uma boa ideia tentar fazer com valores mockados hehe
+
+### Plotar informações no Frontend
+Estou pensando em utilizar o seguinte serviço para a marcação:
+- [Map Maker](https://maps.co)
 
