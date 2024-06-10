@@ -26,5 +26,5 @@ Entretanto, acredito em um primeiro momento que seja uma boa ideia tentar fazer 
 
 ### Plotar informações no Frontend
 Estou pensando em utilizar o seguinte serviço para a marcação:
-- [Map Maker](https://maps.co)
-
+ - [Map Maker](https://maps.co)
+ - [MapBox Maps](https://docs.mapbox.com/help/how-to-videos/custom-markers-gl-js-video/)

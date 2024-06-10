@@ -26,7 +26,7 @@ namespace AppFinder.Driver
 
             var browserOptions = new BrowserTypeLaunchOptions()
             {
-                Headless = true
+                Headless = false
             };
 
             var broserNewContext = new BrowserNewContextOptions()
@@ -40,12 +40,33 @@ namespace AppFinder.Driver
         }
         #endregion
 
-        public async Task GoToHome()
+        public async Task<IPage> OpenPropertyPage(string url)
         {
             var page = await Browser.NewPageAsync();
-            var response = await page.GotoAsync($"https://www.vivareal.com.br/venda/sp/sorocaba/?pagina=2");
-            var headers = response.Request.Headers;
-            await page.ScreenshotAsync(new() { Path = "screenshot.png" });
+            await page.GotoAsync(url);
+            return page;
+        }
+
+        private async Task<Coordinates> GetPosition(IPage page)
+        {
+            var coordinates = new Coordinates();
+            await page.RunAndWaitForRequestAsync(async () =>
+            {
+                await page.Locator(".map__navigate").ClickAsync();
+            }, request => {
+                if (request.Url.Contains("map"))
+                {
+                    Console.WriteLine(request.Url);
+                    var locationQueryString = request.Url.Split("&q=")[1];
+                    var coordidatesSplited = locationQueryString.Split(",");
+                    coordinates.Latitude = coordidatesSplited[0];
+                    coordinates.Longitude = coordidatesSplited[1];
+                    return true;
+                }
+                return false;
+            });
+
+            return coordinates;
         }
 
         public async Task<IEnumerable<PropertyInfo>> FetchAllProperties(SearchFilter filter)
@@ -77,30 +98,46 @@ namespace AppFinder.Driver
             await page.ScreenshotAsync(new() { Path = "screenshot.png" });
         }
 
-        private static async Task<IList<PropertyInfo>> FetchPropertiesOnPage(IPage page)
+        private async Task<IList<PropertyInfo>> FetchPropertiesOnPage(IPage page)
         {
             var properties = new List<PropertyInfo>();
             var resultList = page.Locator("[data-type=\"property\"]");
             var propertiesSections = await resultList.AllAsync();
             foreach ( var propertiesSection in propertiesSections)
             {
-                properties.Add(await FetchPropertyInfos(propertiesSection));
+                var property = await FetchPropertyInfos(propertiesSection);
+                //await GetPosition(property.Url);
+                properties.Add(property);
             }
 
             return properties;
         }
 
-        private static async Task<PropertyInfo> FetchPropertyInfos(ILocator locator)
+        private async Task<PropertyInfo> FetchPropertyInfos(ILocator locator)
         {
             var property = new PropertyInfo();
-            property.Link = await GetLink(locator);
+            property.Url = await GetUrl(locator);
             property.Dimension= await GetDimension(locator);
             property.Bathrooms = await GetBathrooms(locator);
             property.Bedrooms = await GetBedrooms(locator);
             property.Garage = await GetGarage(locator);
             property.Price = await GetPrice(locator);
             property.Address = await GetAddress(locator);
+            
+            var propertyPage = await OpenPropertyPage(property.Url);
+            var coordinates = await GetPosition(propertyPage);
+            property.Latitude = coordinates.Latitude;
+            property.Longitude = coordinates.Longitude;
+            property.Publisher = await GetPublisher(propertyPage);
+            await propertyPage.CloseAsync();
             return property;
+        }
+
+        private async Task<string> GetPublisher(IPage page)
+        {
+            var publisherSection = page.Locator(".publisher__name").First;
+            var text = await publisherSection.TextContentAsync();
+            return text.Trim();
         }
 
         private static async Task<string> GetAddress(ILocator locator)
@@ -148,7 +185,7 @@ namespace AppFinder.Driver
             return text.Trim();
         }
 
-        private static async Task<string> GetLink(ILocator locator)
+        private static async Task<string> GetUrl(ILocator locator)
         {
             var baseUrl = "https://www.vivareal.com.br";
             var link = await locator.Locator("a").First.GetAttributeAsync("href");
